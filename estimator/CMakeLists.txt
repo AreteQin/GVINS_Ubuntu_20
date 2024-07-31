@@ -25,7 +25,10 @@ generate_messages(DEPENDENCIES std_msgs)
 
 find_package(OpenCV REQUIRED)
 
-find_package(Ceres REQUIRED)
+#find_package(Ceres REQUIRED)
+add_subdirectory(${CMAKE_SOURCE_DIR}/ThirdParty/ceres-solver)
+set(CERES_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/ThirdParty/ceres-solver/include)
+set(CERES_LIBRARIES ceres)
 
 include_directories(${catkin_INCLUDE_DIRS} ${CERES_INCLUDE_DIRS})
 

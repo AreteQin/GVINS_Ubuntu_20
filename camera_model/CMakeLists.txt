@@ -16,9 +16,11 @@ include_directories(${Boost_INCLUDE_DIRS})
 find_package(OpenCV REQUIRED)
 
 # set(EIGEN_INCLUDE_DIR "/usr/local/include/eigen3")
-find_package(Ceres REQUIRED)
-include_directories(${CERES_INCLUDE_DIRS})
-
+#find_package(Ceres REQUIRED)
+#include_directories(${CERES_INCLUDE_DIRS})
+add_subdirectory(${CMAKE_SOURCE_DIR}/ThirdParty/ceres-solver)
+include_directories(${CMAKE_SOURCE_DIR}/ThirdParty/ceres-solver/include)
+set(CERES_LIBRARIES ceres)
 
 catkin_package(
     INCLUDE_DIRS include
