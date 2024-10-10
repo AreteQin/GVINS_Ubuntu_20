@@ -331,6 +331,65 @@ void Estimator::processGNSS(const std::vector<ObsPtr> &gnss_meas)
     gnss_ephem_buf[frame_count] = valid_ephems;
 }
 
+void Estimator::processGNSS(const sensor_msgs::NavSatFixConstPtr &gnss_meas)
+{
+        double obs_time = gnss_meas->header.stamp.toSec();
+        std::map<double, size_t> time2index = sat2time_index.at(obs->sat);
+        double ephem_time = EPH_VALID_SECONDS;
+        size_t ephem_index = -1;
+        for (auto ti : time2index)
+        {
+            if (std::abs(ti.first - obs_time) < ephem_time)
+            {
+                ephem_time = std::abs(ti.first - obs_time);
+                ephem_index = ti.second;
+            }
+        }
+        if (ephem_time >= EPH_VALID_SECONDS)
+        {
+            cerr << "ephemeris not valid anymore\n";
+            continue;
+        }
+        const EphemBasePtr &best_ephem = sat2ephem.at(obs->sat).at(ephem_index);
+
+        // filter by tracking status
+        LOG_IF(FATAL, freq_idx < 0) << "No L1 observation found.\n";
+        if (obs->psr_std[freq_idx]  > GNSS_PSR_STD_THRES ||
+            obs->dopp_std[freq_idx] > GNSS_DOPP_STD_THRES)
+        {
+            sat_track_status[obs->sat] = 0;
+            continue;
+        }
+        else
+        {
+            if (sat_track_status.count(obs->sat) == 0)
+                sat_track_status[obs->sat] = 0;
+            ++ sat_track_status[obs->sat];
+        }
+        if (sat_track_status[obs->sat] < GNSS_TRACK_NUM_THRES)
+            continue;           // not being tracked for enough epochs
+
+        // filter by elevation angle
+        if (gnss_ready)
+        {
+            Eigen::Vector3d sat_ecef;
+            if (sys == SYS_GLO)
+                sat_ecef = geph2pos(obs->time, std::dynamic_pointer_cast<GloEphem>(best_ephem), NULL);
+            else
+                sat_ecef = eph2pos(obs->time, std::dynamic_pointer_cast<Ephem>(best_ephem), NULL);
+            double azel[2] = {0, M_PI/2.0};
+            sat_azel(ecef_pos, sat_ecef, azel);
+            if (azel[1] < GNSS_ELEVATION_THRES*M_PI/180.0)
+                continue;
+        }
+        valid_meas.push_back(obs);
+        valid_ephems.push_back(best_ephem);
+    }
+
+    gnss_meas_buf[frame_count] = valid_meas;
+    gnss_ephem_buf[frame_count] = valid_ephems;
+}
+
 bool Estimator::initialStructure()
 {
     TicToc t_sfm;

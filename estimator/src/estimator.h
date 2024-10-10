@@ -30,6 +30,7 @@
 #include <gnss_comm/gnss_utility.hpp>
 #include <gnss_comm/gnss_ros.hpp>
 #include <gnss_comm/gnss_spp.hpp>
+#include <sensor_msgs/NavSatFix.h>
 
 using namespace gnss_comm;
 
@@ -42,7 +43,8 @@ class Estimator
 
     // interface
     void processIMU(double t, const Vector3d &linear_acceleration, const Vector3d &angular_velocity);
-    void processGNSS(const std::vector<ObsPtr> &gnss_mea);
+    void processGNSS(const std::vector<ObsPtr> &gnss_meas);
+    void processGNSS(const sensor_msgs::NavSatFixConstPtr &gnss_meas);
     void inputEphem(EphemBasePtr ephem_ptr);
     void inputIonoParams(double ts, const std::vector<double> &iono_params);
     void inputGNSSTimeDiff(const double t_diff);
@@ -109,7 +111,9 @@ class Estimator
 
     // GNSS related
     bool gnss_ready;
-    Eigen::Vector3d anc_ecef;
+    Eigen::Vector3d anc_ecef; // the anchor point in ECEF coordinate system.
+                              // It is used as a reference point for converting
+                              // between ECEF and local East-North-Up (ENU) coordinates.
     Eigen::Matrix3d R_ecef_enu;
     double yaw_enu_local;
     std::vector<ObsPtr> gnss_meas_buf[(WINDOW_SIZE+1)];

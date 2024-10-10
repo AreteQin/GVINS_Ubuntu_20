@@ -21,7 +21,7 @@ class GNSSVIInitializer
         GNSSVIInitializer& operator=(const GNSSVIInitializer&) = delete;
         ~GNSSVIInitializer() {};
 
-        // get a rough location by SPP
+        // get a rough location by SPP, Sigma Point Positioning
         bool coarse_localization(Eigen::Matrix<double, 7, 1> &result);
         bool yaw_alignment(const std::vector<Eigen::Vector3d> &local_vs, const Eigen::Vector3d &rough_anchor_ecef, 
             double &aligned_yaw, double &rcv_ddt);
